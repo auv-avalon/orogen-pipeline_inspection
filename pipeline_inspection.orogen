@@ -4,7 +4,7 @@ using_library "opencv"
 using_library "frame_helper"
 
 import_types_from 'base'
-import_types_from pipeline_inspectionTypes.hpp
+import_types_from "pipeline_inspectionTypes.hpp"
 
 
 task_context "ColorFilter" do
