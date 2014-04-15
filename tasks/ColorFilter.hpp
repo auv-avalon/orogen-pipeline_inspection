@@ -4,6 +4,9 @@
 #define PIPELINE_INSPECTION_COLORFILTER_TASK_HPP
 
 #include "pipeline_inspection/ColorFilterBase.hpp"
+#include <cv.h>
+#include <base/samples/Frame.hpp>
+#include "frame_helper/FrameHelper.h"
 
 namespace pipeline_inspection {
 
@@ -25,9 +28,10 @@ namespace pipeline_inspection {
     {
 	friend class ColorFilterBase;
     protected:
-
-
-
+	RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> current_frame;
+	RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> output_frame;
+	RTT::extras::ReadOnlyPointer<base::samples::frame::Frame> green_frame_pointer;
+	
     public:
         /** TaskContext constructor for ColorFilter
          * \param name Name of the task. This name needs to be unique to make it identifiable via nameservices.
@@ -85,24 +89,8 @@ namespace pipeline_inspection {
          */
         void updateHook();
 
-        /** This hook is called by Orocos when the component is in the
-         * RunTimeError state, at each activity step. See the discussion in
-         * updateHook() about triggering options.
-         *
-         * Call recover() to go back in the Runtime state.
-         */
-        void errorHook();
-
-        /** This hook is called by Orocos when the state machine transitions
-         * from Running to Stopped after stop() has been called.
-         */
-        void stopHook();
-
-        /** This hook is called by Orocos when the state machine transitions
-         * from Stopped to PreOperational, requiring the call to configureHook()
-         * before calling start() again.
-         */
-        void cleanupHook();
+	void getGreen(cv::Mat &srcRGB, cv::Mat &desRGB);
+	
     };
 }
 

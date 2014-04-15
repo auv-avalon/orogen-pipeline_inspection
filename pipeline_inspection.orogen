@@ -2,18 +2,120 @@ name "pipeline_inspection"
 
 using_library "opencv"
 using_library "frame_helper"
+using_library "pipeline_inspection"
+using_library "offshore_pipeline_detector"
 
 import_types_from 'base'
 import_types_from "pipeline_inspectionTypes.hpp"
+import_types_from "pipeline_inspection/DetectorTypes.hpp"
+import_types_from "offshore_pipeline_detector/pipeline.h"
 
 
 task_context "ColorFilter" do
+###
+#This task filters images on the green channel and return grayscale images
+###
 
-  input_port("frames_in", ro_ptr('base::samples::frame::Frame'))
+  input_port("frame_in", ro_ptr('base::samples::frame::Frame')).
+    doc("Input image as RGB")
   
-  output_port("frames_out", ro_ptr('base::samples::frame::Frame'))
+  output_port("frame_out", ro_ptr('base::samples::frame::Frame')).
+    doc("Colorfiltered image, as grayscale")
+    
+  output_port("green_frame", ro_ptr('base::samples::frame::Frame'))
+  
+  output_port("diff_frame", ro_ptr('base::samples::frame::Frame'))
+  
+  property("green_threshold", "int", 125).
+    doc("Colorthreshold, values beneath this will be set 0")
+    
+  property("diff_threshold", "int", 125)
   
   port_driven
+
+end
+
+task_context "Inspection" do
+  needs_configuration
+
+  input_port("laserSamples" , "base/samples/LaserScan").
+    doc("Extracted laserscans, from the structuredLight task")
+    
+  input_port("laserPoints" , "std/vector<base/Vector3d>").
+    doc("Laserscan as 3d points. Alternatve-port to laserSamples")
+    
+  input_port("pipeline", "controlData/Pipeline").
+    doc("Pipelineinformation from the offshore_pipeline_detector")
+  
+  input_port("dead_reckoning", "base/samples/RigidBodyState").
+    doc("Motion data of the vehicle")
+  
+  output_port("inspectionStatus", "pipeline_inspection/InspectionStatus")
+  output_port("pipePoints", "std/vector<base/Vector3d>")
+  output_port("debug_frame", ro_ptr('base::samples::frame::Frame')).
+    doc("Debug-image of the pipePoints. This port need to be activated by the debug-property")
+      
+  property("laserPosition", "base/Vector3d").
+    doc("Position of the linelaser in bodyframe")
+    
+  property("laserNorm", "base/Vector3d").
+    doc("Normvector of the linelaserFrame")
+    
+  property("cameraPosition", "base/Vector3d").
+    doc("Position of the camera in the body frame")
+    
+  property("cameraOrientation", "base/Quaterniond").
+    doc("Orientation of the camera in the bodyframe")
+  
+  property("buffer_size", "int", 10).
+    doc("Size of the ringbuffer, containing the last n lasersamples")
+    
+  property("minimizer", "pipeline_inspection/min_algorithm").
+    doc("Minimizer algorithm for pattern matching, refer to enu nlopt::algorithm")
+    
+  property("matcher_parameter_tolerance", "double", 0.0001)
+  property("matcher_value_tolerance", "double", 0.0001)
+  
+  property("matcher_iterations", "int", 100)
+  
+  property("matcher_pipe_up", "bool", true)
+  
+  property("debug", "bool", false).
+    doc("Activate debug outputs")
+  
+  port_driven
+  
+end
+
+task_context "LaserSimulation" do
+
+  output_port("laserPoints" , "std/vector<base/Vector3d>")
+  
+  output_port("laserPointCloud", "base/samples/Pointcloud")
+  
+  property("laserPosition", "base/Vector3d").
+    doc("Position of the linelaser in bodyframe")
+    
+  property("laserNorm", "base/Vector3d").
+    doc("Normvector of the linelaserFrame")
+    
+  property("cameraPosition", "base/Vector3d").
+    doc("Position of the camera in the body frame")
+    
+  property("cameraOrientation", "base/Quaterniond").
+    doc("Orientation of the camera in the bodyframe")
+    
+  property("variance", "double" , 0.01)
+  
+  property("line_height", "double", -1.0)
+  
+  property("line_length", "double", 1.0)
+  
+  property("pipe_height", "double", 0.1)
+  
+  property("pipe_width", "double", 0.2)
+
+  periodic 0.1
 
 end
 

@@ -15,6 +15,7 @@
   <depend package="dummy-dependency-n" />
   -->
   <depend package="base/types" />
+  <depend package="image_processing/pipeline_inspection" />
   <depend package="image_processing/frame_helper" />
   <depend package="opencv" />
 </package>
