@@ -7,11 +7,15 @@ using namespace pipeline_inspection;
 LaserSimulation::LaserSimulation(std::string const& name, TaskCore::TaskState initial_state)
     : LaserSimulationBase(name, initial_state)
 {
+  
+  _vehicle_velocity.set(base::Vector3d(0.0 ,0.0 , 0.0));
+  
 }
 
 LaserSimulation::LaserSimulation(std::string const& name, RTT::ExecutionEngine* engine, TaskCore::TaskState initial_state)
     : LaserSimulationBase(name, engine, initial_state)
-{
+{  
+  _vehicle_velocity.set(base::Vector3d(0.0 ,0.0 , 0.0));
 }
 
 LaserSimulation::~LaserSimulation()
@@ -38,6 +42,10 @@ bool LaserSimulation::startHook()
     noise = new boost::variate_generator<boost::mt19937, boost::normal_distribution<> >(boost::mt19937(time(0)),
            boost::normal_distribution<>(0.0,  _variance.get()));    
     
+    pose.time = base::Time::now();
+    pose.position = base::Vector3d(0.0, 0.0, 0.0);
+    pose.orientation = base::Quaterniond(1.0, 0.0, 0.0 ,0.0);
+    pose.velocity = base::Vector3d(0.0, 0.0, 0.0);
     
     return true;
 }
@@ -56,6 +64,14 @@ void LaserSimulation::updateHook()
     pc.time = base::Time::now();
     pc.points = points;
     _laserPointCloud.write(pc);
+    
+    
+    //Motion
+    
+    pose.position += _vehicle_velocity.get() * 0.1;
+    pose.time = base::Time::now();
+    _vehiclePos.write(pose);
+    
     
 }
 

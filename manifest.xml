@@ -18,4 +18,5 @@
   <depend package="image_processing/pipeline_inspection" />
   <depend package="image_processing/frame_helper" />
   <depend package="opencv" />
+  <tags>needs_opt</tags>
 </package>

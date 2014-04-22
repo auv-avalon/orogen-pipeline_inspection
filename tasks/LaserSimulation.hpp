@@ -71,7 +71,9 @@ namespace pipeline_inspection {
       
       std::vector<base::Vector3d> points;
       
-      boost::variate_generator<boost::mt19937, boost::normal_distribution<> > *noise;
+      boost::variate_generator<boost::mt19937, boost::normal_distribution<> > *noise; //random noise generator
+      
+      base::samples::RigidBodyState pose;
 
     };
 }

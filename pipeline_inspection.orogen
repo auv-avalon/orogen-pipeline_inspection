@@ -44,6 +44,9 @@ task_context "Inspection" do
   input_port("laserPoints" , "std/vector<base/Vector3d>").
     doc("Laserscan as 3d points. Alternatve-port to laserSamples")
     
+  input_port("laserPointCloud", "base/samples/Pointcloud")  
+    
+    
   input_port("pipeline", "controlData/Pipeline").
     doc("Pipelineinformation from the offshore_pipeline_detector")
   
@@ -51,9 +54,14 @@ task_context "Inspection" do
     doc("Motion data of the vehicle")
   
   output_port("inspectionStatus", "pipeline_inspection/InspectionStatus")
-  output_port("pipePoints", "std/vector<base/Vector3d>")
-  output_port("debug_frame", ro_ptr('base::samples::frame::Frame')).
+  output_port("pipePoints", "base/samples/Pointcloud")
+  output_port("debugFrame", ro_ptr('base::samples::frame::Frame')).
     doc("Debug-image of the pipePoints. This port need to be activated by the debug-property")
+    
+  output_port("pipeMap", "base/samples/Pointcloud")
+  
+  ######
+  ## Calibration 
       
   property("laserPosition", "base/Vector3d").
     doc("Position of the linelaser in bodyframe")
@@ -66,19 +74,51 @@ task_context "Inspection" do
     
   property("cameraOrientation", "base/Quaterniond").
     doc("Orientation of the camera in the bodyframe")
+    
+  property("invert_z", "bool", false)
+  
+  property("laser_left_boundary", "double", 0.0).
+    doc("Left laser boundary in percent")
+    
+  property("laser_right_boundary", "double", 0.0).
+    doc("Right laser boundray in percent")
+    
+  property("max_pipe_angle", "double", 3.14).
+    doc("Maximum pipe angle, at which the pipe_detector-status is used")
+    
+  property("min_pipe_confidence", "double", 0.4).
+    doc("Minimum pipe confidence, at which the pipe_detector-status is used")
+    
   
   property("buffer_size", "int", 10).
     doc("Size of the ringbuffer, containing the last n lasersamples")
     
   property("minimizer", "pipeline_inspection/min_algorithm").
     doc("Minimizer algorithm for pattern matching, refer to enu nlopt::algorithm")
-    
+  
+  ######
+  ## Matcher parameter
+  ######
+  
   property("matcher_parameter_tolerance", "double", 0.0001)
   property("matcher_value_tolerance", "double", 0.0001)
   
   property("matcher_iterations", "int", 100)
   
   property("matcher_pipe_up", "bool", true)
+  
+  
+  #####
+  ## Detection parameter
+  #####
+  
+  property("pipe_color", "base/Vector3d")
+  property("ground_color", "base/Vector3d")
+  property("underflooding_color", "base/Vector3d")
+  property("overflooding_color", "base/Vector3d")
+  
+  property("pipe_radius", "double", 0.15)
+  property("pipe_tolerance", "double", 0.1)
   
   property("debug", "bool", false).
     doc("Activate debug outputs")
@@ -92,6 +132,8 @@ task_context "LaserSimulation" do
   output_port("laserPoints" , "std/vector<base/Vector3d>")
   
   output_port("laserPointCloud", "base/samples/Pointcloud")
+  
+  output_port("vehiclePos", "base/samples/RigidBodyState")
   
   property("laserPosition", "base/Vector3d").
     doc("Position of the linelaser in bodyframe")
@@ -114,6 +156,8 @@ task_context "LaserSimulation" do
   property("pipe_height", "double", 0.1)
   
   property("pipe_width", "double", 0.2)
+  
+  property("vehicle_velocity", "base/Vector3d")
 
   periodic 0.1
 

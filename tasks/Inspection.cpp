@@ -37,13 +37,27 @@ bool Inspection::configureHook()
     calib.laserPos = _laserPosition.get();
     calib.cameraOrientation = _cameraOrientation.get();
     calib.laserNorm = _laserNorm.get();
-    calib.buffer_size = _buffer_size.get();
+    calib.buffer_size = _buffer_size.get();    
+    calib.invert_z = _invert_z.get();
+    
+    calib.left_laser_boundary = _laser_left_boundary.get();
+    calib.right_laser_boundary = _laser_right_boundary.get();
     
     calib.min_algo = _minimizer.get();
     calib.matcher_parameter_tolerance = _matcher_parameter_tolerance.get();
     calib.matcher_value_tolerance = _matcher_value_tolerance.get();
     calib.matcher_iterations = _matcher_iterations.get();
     calib.matcher_pipe_up = _matcher_pipe_up.get();
+    
+    calib.pipe_color = base::Vector4d(_pipe_color.get().x(), _pipe_color.get().y(), _pipe_color.get().z(), 1.0 );
+    calib.ground_color = base::Vector4d(_ground_color.get().x(), _ground_color.get().y(), _ground_color.get().z(), 1.0);
+    calib.overflooding_color = base::Vector4d(_overflooding_color.get().x(), _overflooding_color.get().y(), _overflooding_color.get().z(), 1.0);
+    calib.underflooding_color = base::Vector4d(_underflooding_color.get().x(), _underflooding_color.get().y(), _underflooding_color.get().z(), 1.0);
+    
+    calib.pipe_radius = _pipe_radius.get();
+    calib.pipe_tolerance = _pipe_tolerance.get();
+    calib.max_pipe_angle = _max_pipe_angle.get();
+    calib.min_pipe_confidence = _min_pipe_confidence.get();
     
     detector.init(calib);
     this->calib = calib;
@@ -52,6 +66,12 @@ bool Inspection::configureHook()
     debug_maxZ = debug_maxY;
     debug_minY = DBL_MAX;
     debug_minZ = debug_minY;
+    
+    
+    lastPosition.position = base::Vector3d(0.0, 0.0, 0.0);
+    lastPosition.orientation = base::Quaterniond(0.0, 0.0, 0.0, 1.0);
+    
+    lastPipe.state = controlData::NO_PIPE;
     
     return true;
 }
@@ -66,31 +86,56 @@ void Inspection::updateHook()
     InspectionBase::updateHook();
     bool updated = false;
     
-    while(_pipeline.read(lastPipe) == RTT::NewData);
-    
-    while(_dead_reckoning.read(lastPosition) == RTT::NewData);
-    
     base::samples::LaserScan scan;
     InspectionStatus is;
     while(_laserSamples.read(scan) == RTT::NewData){
+      
+      _dead_reckoning.readNewest(lastPosition) == RTT::NewData;
+      _pipeline.readNewest(lastPipe) == RTT::NewData;      
+      
       is = detector.inspect(scan, lastPipe, lastPosition);
       _inspectionStatus.write(is);
       updated = true;
     }
     
     std::vector<base::Vector3d> points;
-      while(_laserPoints.read(points) == RTT::NewData){
+    while(_laserPoints.read(points) == RTT::NewData){
+      
+      _dead_reckoning.readNewest(lastPosition) == RTT::NewData;
+      _pipeline.readNewest(lastPipe) == RTT::NewData;      
+      
       is = detector.inspect(points, lastPipe, lastPosition);
       is.time = base::Time::now();
       _inspectionStatus.write(is);
       updated = true;
     }
     
-    if(updated){
-      _pipePoints.write(detector.getPipePoints());
+    base::samples::Pointcloud pcloud;
+    while(_laserPointCloud.read(pcloud) == RTT::NewData){
       
-      if(_debug && detector.getPipePoints().size() > 0){
-	std::vector<base::Vector3d> points = detector.getPipePoints();
+      _dead_reckoning.readNewest(lastPosition) == RTT::NewData;
+      _pipeline.readNewest(lastPipe) == RTT::NewData;
+      
+      is = detector.inspect(pcloud.points, lastPipe, lastPosition);
+      is.time = pcloud.time;
+      _inspectionStatus.write(is);
+      updated = true;      
+    }
+    
+    
+    if(updated){
+      
+      std::vector<base::Vector3d> points = detector.getPipePoints();
+      base::samples::Pointcloud pc;
+      pc.points = points;
+      _pipePoints.write(pc);
+      
+      base::samples::Pointcloud pc2;
+      pc2 = detector.getPointcloud(true);
+      _pipeMap.write(pc2);
+      
+      if(_debug && points.size() > 0){        
+        
 	output_frame.reset(new base::samples::frame::Frame(1000, 500));
 	double minZ, maxZ, minY, maxY;
 	double spanZ, spanY;
@@ -152,10 +197,15 @@ void Inspection::updateHook()
           int count_overflow = 0;
           
           //Draw line
-          for(int i = 0; i < NUM_COLS - 1; i++){
+          for(double i = minY; i < maxY; i += spanY / NUM_COLS){
+            double height = is.laser_height + (i * is.laser_gradient);
             
-            if(height * NUM_COLS + i < NUM_COLS * NUM_ROWS)
-              f->getImagePtr()[height * NUM_COLS + i] = 255;
+            int row = (int) (((height - minZ) / spanZ) * NUM_ROWS);
+            int col = (int) (((i - minY) / spanY) * NUM_COLS);
+            
+            int index = row * NUM_COLS + col;
+            if(index < NUM_COLS * NUM_ROWS && index >= 0)
+              f->getImagePtr()[index] = 255;
             else{
               count_overflow++;
             }
@@ -227,7 +277,7 @@ void Inspection::updateHook()
 	//std::cout << "Y " << minY << " - " << maxY << std::endl;
 	//std::cout << "Z " << minZ << " - " << maxZ << std::endl;
 	output_frame.reset(f);
-	_debug_frame.write(output_frame);
+	_debugFrame.write(output_frame);
       }
       
     }
