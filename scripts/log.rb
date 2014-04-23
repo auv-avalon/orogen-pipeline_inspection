@@ -14,11 +14,12 @@ end
 =end
 
 replay = Orocos::Log::Replay.open("/media/WINDOWS/LOGS/testhalle_17_4_2014/bottom_cam_low.log",
-                               "/media/WINDOWS/LOGS/testhalle_17_4_2014/localization_low.log")
+                               "/media/WINDOWS/LOGS/testhalle_17_4_2014/localization_low.log",
+                                "/media/WINDOWS/LOGS/testhalle_17_4_2014/avalon_back_low.log")
 
 Orocos.initialize
 Orocos.run 'offshore_pipeline_detector_test', 'line_scanner::Task' => 'line_scanner', 'pipeline_inspection::Inspection' => "inspection",
-    "image_preprocessing::HSVSegmentationAndBlur" => "blur" do 
+    "image_preprocessing::HSVSegmentationAndBlur" => "blur", "uw_particle_localization::MotionModel" => "model" do 
     #viz = Vizkit.default_loader.PointcloudVisualization
 
     task = Orocos.get 'line_scanner'
@@ -61,8 +62,13 @@ Orocos.run 'offshore_pipeline_detector_test', 'line_scanner::Task' => 'line_scan
     pipeline_detector.configure
     pipeline_detector.start   
     
+    model = Orocos::TaskContext.get 'model'
+    Orocos.apply_conf_file(model, "/home/fabio/avalon/bundles/avalon/config/orogen/uw_particle_localization::MotionModel.yml")
+    model.configure
+    model.start
     
-    
+    replay.hbridge_reader.status_samples.connect_to model.thruster_samples
+    replay.depth_orientation_fusion.pose_samples.connect_to model.orientation_samples
     
     
     inspection = Orocos::TaskContext.get 'inspection'
@@ -76,11 +82,15 @@ Orocos.run 'offshore_pipeline_detector_test', 'line_scanner::Task' => 'line_scan
     inspection.invert_z = true
     inspection.debug = true
     inspection.minimizer = :GN_DIRECT_L #:GN_ESCH #:LN_COBYLA #:GN_DIRECT_L #:LN_NELDERMEAD
+    
+    inspection.use_second_minimizer = true
+    inspection.minimizer2 = :LN_NELDERMEAD
+    
     inspection.matcher_parameter_tolerance = -0.001
     inspection.matcher_value_tolerance = -0.001
-    inspection.matcher_iterations = 1000
+    inspection.matcher_iterations = 1500
     inspection.matcher_pipe_up = true
-    inspection.buffer_size = 1
+    inspection.buffer_size = 500
     
     inspection.laser_left_boundary = 0.4
     inspection.laser_right_boundary = 0.4
@@ -88,26 +98,33 @@ Orocos.run 'offshore_pipeline_detector_test', 'line_scanner::Task' => 'line_scan
     inspection.pipe_color = [[0.0, 1.0, 0.0]]
     inspection.ground_color = [[1.0, 1.0, 1.0]]
     inspection.underflooding_color = [[1.0, 0.0, 0.0]]
-    inspection.overflooding_color = [[0.0, 0.0, 1.0]]
+    inspection.overflooding_color = [[0.0, 1.0, 1.0]]
+    inspection.movement_factor = 1.0
+    inspection.z_offset = 2.0
     
-    inspection.pipe_radius = 0.15
-    inspection.pipe_tolerance = 0.2
+    inspection.pipe_radius_v = 0.14
+    inspection.pipe_radius_h = 0.09
+    inspection.pipe_tolerance_v = 0.3
+    inspection.pipe_tolerance_h = 0.5
+    inspection.pipe_min_radius = 0.02
     
     inspection.max_pipe_angle = 1.5
-    inspection.min_pipe_confidence = 0.3
+    inspection.min_pipe_confidence = 0.2
     
     inspection.configure
     inspection.start    
     
     task.pointcloud.connect_to inspection.laserPointCloud    
     pipeline_detector.pipeline.connect_to inspection.pipeline
-    replay.motion_model.pose_samples.connect_to inspection.dead_reckoning
-    
+    #replay.motion_model.pose_samples.connect_to inspection.dead_reckoning
+    #replay.uw_particle_localization.dead_reckoning_samples.connect_to inspection.dead_reckoning
+    model.pose_samples.connect_to inspection.dead_reckoning
     
     
     Vizkit.display inspection
-    Vizkit.display task
-    Vizkit.display pipeline_detector
+    Vizkit.display task.debug
+    #Vizkit.display pipeline_detector
+    Vizkit.display model
     Vizkit.control replay
 
 =begin    

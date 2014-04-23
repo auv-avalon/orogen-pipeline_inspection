@@ -95,6 +95,11 @@ task_context "Inspection" do
     
   property("minimizer", "pipeline_inspection/min_algorithm").
     doc("Minimizer algorithm for pattern matching, refer to enu nlopt::algorithm")
+    
+  property("minimizer2", "pipeline_inspection/min_algorithm").
+    doc("Second minimizer algorithm")
+    
+  property("use_second_minimizer", "bool", false)
   
   ######
   ## Matcher parameter
@@ -107,6 +112,7 @@ task_context "Inspection" do
   
   property("matcher_pipe_up", "bool", true)
   
+  property("matcher_variance_threshold", "double", 1.0)
   
   #####
   ## Detection parameter
@@ -116,9 +122,19 @@ task_context "Inspection" do
   property("ground_color", "base/Vector3d")
   property("underflooding_color", "base/Vector3d")
   property("overflooding_color", "base/Vector3d")
+  property("z_offset", "double", 0.0)
   
-  property("pipe_radius", "double", 0.15)
-  property("pipe_tolerance", "double", 0.1)
+  property("pipe_radius_h", "double", 0.15)
+  property("pipe_radius_v", "double", 0.15)
+  property("pipe_tolerance_h", "double", 0.1)
+  property("pipe_tolerance_v", "double", 0.1)
+  property("pipe_min_radius", "double", 0.2).
+    doc("Radius the pipe must have to be detected as pipe")
+  
+  
+  property("movement_factor", "double", 1.0).
+    doc("Factor, which is multipliet to dead reckoning samples")
+
   
   property("debug", "bool", false).
     doc("Activate debug outputs")

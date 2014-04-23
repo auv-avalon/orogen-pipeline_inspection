@@ -44,18 +44,28 @@ bool Inspection::configureHook()
     calib.right_laser_boundary = _laser_right_boundary.get();
     
     calib.min_algo = _minimizer.get();
+    calib.min_algo2 = _minimizer2.get();
+    calib.use_second_minimizer = _use_second_minimizer.get();
     calib.matcher_parameter_tolerance = _matcher_parameter_tolerance.get();
     calib.matcher_value_tolerance = _matcher_value_tolerance.get();
     calib.matcher_iterations = _matcher_iterations.get();
     calib.matcher_pipe_up = _matcher_pipe_up.get();
+    calib.matcher_variance_threshold = _matcher_variance_threshold.get();
     
     calib.pipe_color = base::Vector4d(_pipe_color.get().x(), _pipe_color.get().y(), _pipe_color.get().z(), 1.0 );
     calib.ground_color = base::Vector4d(_ground_color.get().x(), _ground_color.get().y(), _ground_color.get().z(), 1.0);
     calib.overflooding_color = base::Vector4d(_overflooding_color.get().x(), _overflooding_color.get().y(), _overflooding_color.get().z(), 1.0);
     calib.underflooding_color = base::Vector4d(_underflooding_color.get().x(), _underflooding_color.get().y(), _underflooding_color.get().z(), 1.0);
     
-    calib.pipe_radius = _pipe_radius.get();
-    calib.pipe_tolerance = _pipe_tolerance.get();
+    calib.movement_factor = _movement_factor.get();
+    calib.z_offset = _z_offset.get();
+    
+    calib.pipe_radius_h = _pipe_radius_h.get();
+    calib.pipe_radius_v = _pipe_radius_v.get();
+    calib.pipe_tolerance_h = _pipe_tolerance_h.get();
+    calib.pipe_tolerance_v = _pipe_tolerance_v.get();
+    calib.pipe_min_radius = _pipe_min_radius.get();
+    
     calib.max_pipe_angle = _max_pipe_angle.get();
     calib.min_pipe_confidence = _min_pipe_confidence.get();
     
@@ -220,7 +230,7 @@ void Inspection::updateHook()
           std::cout << "Z " << minZ << " - " << maxZ << std::endl;
           
           count_overflow = 0;
-          if(is.pipe_width > 0.0){
+          if(is.pipe_width > 0.0 && is.pipe_width > spanY * 0.001){
           
           //Draw ellipse
             for(double i = is.pipe_center - is.pipe_width; i < is.pipe_center + is.pipe_width; i+= is.pipe_width/200){
