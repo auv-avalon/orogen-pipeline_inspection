@@ -69,6 +69,8 @@ bool Inspection::configureHook()
     calib.max_pipe_angle = _max_pipe_angle.get();
     calib.min_pipe_confidence = _min_pipe_confidence.get();
     
+    calib.debug = _debug.get();
+    
     detector.init(calib);
     this->calib = calib;
     

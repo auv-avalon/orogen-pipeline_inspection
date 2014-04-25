@@ -105,7 +105,8 @@ task_context "Inspection" do
   ## Matcher parameter
   ######
   
-  property("matcher_parameter_tolerance", "double", 0.0001)
+  property("matcher_parameter_tolerance", "double", 0.0001).
+    doc("tolerance, at which matcher stops")
   property("matcher_value_tolerance", "double", 0.0001)
   
   property("matcher_iterations", "int", 100)
@@ -118,6 +119,7 @@ task_context "Inspection" do
   ## Detection parameter
   #####
   
+  #Output colors in rgb
   property("pipe_color", "base/Vector3d")
   property("ground_color", "base/Vector3d")
   property("underflooding_color", "base/Vector3d")

@@ -90,7 +90,7 @@ Orocos.run 'offshore_pipeline_detector_test', 'line_scanner::Task' => 'line_scan
     inspection.matcher_value_tolerance = -0.001
     inspection.matcher_iterations = 1500
     inspection.matcher_pipe_up = true
-    inspection.buffer_size = 500
+    inspection.buffer_size = 150
     
     inspection.laser_left_boundary = 0.4
     inspection.laser_right_boundary = 0.4
