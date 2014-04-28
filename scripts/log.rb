@@ -90,12 +90,12 @@ Orocos.run 'offshore_pipeline_detector_test', 'line_scanner::Task' => 'line_scan
     inspection.matcher_value_tolerance = -0.001
     inspection.matcher_iterations = 1500
     inspection.matcher_pipe_up = true
-    inspection.buffer_size = 150
+    inspection.buffer_size = 50
     
     inspection.laser_left_boundary = 0.4
     inspection.laser_right_boundary = 0.4
     
-    inspection.pipe_color = [[0.0, 1.0, 0.0]]
+    inspection.pipe_color = [[1.0, 1.0, 1.0]]
     inspection.ground_color = [[1.0, 1.0, 1.0]]
     inspection.underflooding_color = [[1.0, 0.0, 0.0]]
     inspection.overflooding_color = [[0.0, 1.0, 1.0]]
@@ -110,6 +110,10 @@ Orocos.run 'offshore_pipeline_detector_test', 'line_scanner::Task' => 'line_scan
     
     inspection.max_pipe_angle = 1.5
     inspection.min_pipe_confidence = 0.2
+    
+    inspection.no_motion = true
+    
+    Orocos.apply_conf_file(inspection, "inspection.yml")
     
     inspection.configure
     inspection.start    

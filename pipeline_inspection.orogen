@@ -101,6 +101,8 @@ task_context "Inspection" do
     
   property("use_second_minimizer", "bool", false)
   
+  property("no_motion", "bool", false)
+  
   ######
   ## Matcher parameter
   ######
