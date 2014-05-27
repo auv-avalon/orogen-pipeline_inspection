@@ -70,6 +70,7 @@ bool Inspection::configureHook()
     calib.min_pipe_confidence = _min_pipe_confidence.get();
     
     calib.no_motion = _no_motion.get();
+    calib.use_velocity = _use_velocity.get();
     
     calib.debug = _debug.get();
     
@@ -145,7 +146,7 @@ void Inspection::updateHook()
       _pipePoints.write(pc);
       
       base::samples::Pointcloud pc2;
-      pc2 = detector.getPointcloud(true);
+      pc2 = detector.getPointcloud(_relative_map.get());
       _pipeMap.write(pc2);
       
       if(_debug && points.size() > 0){        

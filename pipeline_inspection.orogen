@@ -101,7 +101,15 @@ task_context "Inspection" do
     
   property("use_second_minimizer", "bool", false)
   
-  property("no_motion", "bool", false)
+  property("no_motion", "bool", false).
+    doc("Build depth map with fake linear motion")
+  
+  property("use_velocity", "bool", false).
+    doc("Use only velocity of the motion_samples to build the depth_map, ignore sample-position")
+    
+  property("relative_map", "bool", true).
+    doc("Create a relative map, centered in the origin")
+  
   
   ######
   ## Matcher parameter
