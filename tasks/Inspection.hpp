@@ -62,6 +62,8 @@ namespace pipeline_inspection {
 	
 	double debug_minZ, debug_minY;
 	double debug_maxZ, debug_maxY;
+        
+        void drawDebug(std::vector<base::Vector3d> &points, InspectionStatus &is);
 
     };
 }

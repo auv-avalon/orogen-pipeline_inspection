@@ -149,64 +149,74 @@ void Inspection::updateHook()
       pc2 = detector.getPointcloud(_relative_map.get());
       _pipeMap.write(pc2);
       
+      //envire::Pointcloud envireCloud;
+      //envireCloud.vertices = pc2.points;
+      //_envireMap.write(envireCloud);
+      
       if(_debug && points.size() > 0){        
+        drawDebug(points, is);
+      }
+      
+    }
+      
+}
+
+void Inspection::drawDebug(std::vector<base::Vector3d> &points, InspectionStatus &is){
+        output_frame.reset(new base::samples::frame::Frame(1000, 500));
+        double minZ, maxZ, minY, maxY;
+        double spanZ, spanY;
         
-	output_frame.reset(new base::samples::frame::Frame(1000, 500));
-	double minZ, maxZ, minY, maxY;
-	double spanZ, spanY;
-	
-	minZ = debug_minZ;
-	minY = debug_minY;
-	maxZ = debug_maxZ;
-	maxY = debug_maxY;
-	
-	for(std::vector<base::Vector3d>::iterator it = points.begin(); it != points.end(); it++){
-	  
-	  if(it->z() > maxZ)
-	    maxZ = it->z();
-	  
-	  if(it->z() < minZ)
-	    minZ = it->z();
-	  
-	  if(it->y() > maxY)
-	    maxY = it->y();
-	  
-	  if(it->y() < minY)
-	    minY = it->y();
-	}
-	
-	spanZ = maxZ - minZ;
-	spanY = maxY - minY;
-	
-	debug_maxY = maxY;
-	debug_minY = minY;
-	debug_maxZ = maxZ;
-	debug_minZ = minZ;
-	
-	base::samples::frame::Frame *f = output_frame.write_access();
+        minZ = debug_minZ;
+        minY = debug_minY;
+        maxZ = debug_maxZ;
+        maxY = debug_maxY;
+        
+        //Find minimum and maximum coordinates        
+        for(std::vector<base::Vector3d>::iterator it = points.begin(); it != points.end(); it++){
+          
+          if(it->z() > maxZ)
+            maxZ = it->z();
+          
+          if(it->z() < minZ)
+            minZ = it->z();
+          
+          if(it->y() > maxY)
+            maxY = it->y();
+          
+          if(it->y() < minY)
+            minY = it->y();
+        }
+        
+        spanZ = maxZ - minZ;
+        spanY = maxY - minY;
+        
+        debug_maxY = maxY;
+        debug_minY = minY;
+        debug_maxZ = maxZ;
+        debug_minZ = minZ;
+        
+        base::samples::frame::Frame *f = output_frame.write_access();
         const int NUM_COLS = 1000;
         const int NUM_ROWS = 500;
         
-	for(std::vector<base::Vector3d>::iterator it = points.begin(); it != points.end(); it++){
-	  int row = (int) (((it->z() - minZ) / spanZ) * NUM_ROWS);
-	  int col = (int) (((it->y() - minY) / spanY) * NUM_COLS);	  
-	  
-	  if(f != 0){
-	    //std::cout << f << std::endl;
-	    if(row * NUM_COLS + col < NUM_COLS * NUM_ROWS){
-	      f->getImagePtr()[row * NUM_COLS + col] = 255;
-	    }
-	    else{
-	      //std::cout << "Overflow" << std::endl;
-	    }	    
-	    
-	  }
-	}
-	
-	f->getImagePtr()[10 * NUM_COLS + 10] = 255;
-	
-	if(is.laser_height > minZ && is.laser_height < maxZ){
-	
+        //Draw pointcloud
+        for(std::vector<base::Vector3d>::iterator it = points.begin(); it != points.end(); it++){
+          int row = (int) (((it->z() - minZ) / spanZ) * NUM_ROWS);
+          int col = (int) (((it->y() - minY) / spanY) * NUM_COLS);        
+          
+          if(f != 0){
+
+            if(row * NUM_COLS + col < NUM_COLS * NUM_ROWS){
+              f->getImagePtr()[row * NUM_COLS + col] = 255;
+            }       
+            
+          }
+        }
+        
+        f->getImagePtr()[10 * NUM_COLS + 10] = 255;
+        
+        if(is.laser_height > minZ && is.laser_height < maxZ){
+        
           //Line height in image
           int height = (int) (((is.laser_height - minZ) / spanZ) * (NUM_ROWS - 1) );
           int count_overflow = 0;
@@ -245,9 +255,9 @@ void Inspection::updateHook()
               if(col >= 0 && col < NUM_COLS - 1){
                 
                 double x = (i - is.pipe_center) ;// is.pipe_width;
-                //double circle = std::sqrt( 1 - (x * x) ) * is.pipe_radius; //TODO!!!
+
                 double circle = std::sqrt( (1 - ((x*x) / (is.pipe_width * is.pipe_width)) ) * (is.pipe_height * is.pipe_height) );
-                //std::cout << "Circle " << circle << std::endl; 
+
                 int row = (int) (((is.laser_height - circle - minZ) / spanZ) * (NUM_ROWS - 1) );
                 int row2 = (int) (((is.laser_height + circle - minZ) / spanZ) * (NUM_ROWS - 1) );
                 
@@ -285,17 +295,12 @@ void Inspection::updateHook()
         }else{
           std::cout << "Pattern out of range" << std::endl;
         }
-	
-	f->time = base::Time::now();
-	//std::cout << "Write out" << std::endl;
-	//std::cout << "Image size: " << f->getSize().width << " " << f->getSize().height << std::endl;
-	//std::cout << "Y " << minY << " - " << maxY << std::endl;
-	//std::cout << "Z " << minZ << " - " << maxZ << std::endl;
-	output_frame.reset(f);
-	_debugFrame.write(output_frame);
-      }
-      
-    }
-      
-}
+        
+        f->time = base::Time::now();
+
+        output_frame.reset(f);
+        _debugFrame.write(output_frame);
+ } 
+
+
 
